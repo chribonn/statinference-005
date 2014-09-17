@@ -1,0 +1,144 @@
+---
+title: "Statistical Inference Project - Part 2"
+author: "Alan C Bonnici"
+date: "Tuesday, September 16, 2014"
+output: pdf_document
+---
+
+Synopsis
+========
+
+This project answers the following question:
+
+> Now in the second portion of the class, we're going to analyze the ToothGrowth data in the R datasets package. 
+1 Load the ToothGrowth data and perform some basic exploratory data analyses 
+2 Provide a basic summary of the data.
+3 Use confidence intervals and hypothesis tests to compare tooth growth by supp and dose. (Use the techniques from class even if there's other approaches worth considering)
+4 State your conclusions and the assumptions needed for your conclusions. 
+
+## The Solution
+
+### Analysis of the data
+
+According to the R Documentation, the ToothGrowth dataset is
+
+> *The response is the length of odontoblasts (teeth) in each of 10 guinea pigs at each of three dose levels of Vitamin C (0.5, 1, and 2 mg) with each of two delivery methods (orange juice or ascorbic acid).*
+
+The dataset is a data frame with `r nrow(ToothGrowth)` observations on `r ncol(ToothGrowth)` variables.  
+
+> **len** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; numeric &nbsp;&nbsp;&nbsp;&nbsp; Tooth length  
+> **supp** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; factor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Supplement type (VC or OJ).  
+> **dose** &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; numeric &nbsp;&nbsp;&nbsp; Dose in milligrams.
+
+The first few rows of the data are shown below:
+```{r}
+head(ToothGrowth)
+```
+
+```{r, echo=FALSE, fig.height = 4}
+par(mfrow=c(1,2))
+boxplot(len~supp, data=ToothGrowth, 
+  col = c("yellow", "orange"),
+  main = "Tooth Growth", 
+  xlab = "Suppliment",
+  ylab = "Tooth length")
+
+boxplot(len~dose, data=ToothGrowth, 
+  col = c("yellow", "orange", "cyan"),
+  main = "Tooth Growth", 
+  xlab = "Dose",
+  ylab = "Tooth length")
+```
+
+```{r, echo=FALSE, fig.height = 4}
+par(mfrow=c(1,1))
+boxplot(len ~ dose, data = ToothGrowth,
+        boxwex = 0.25, at = 1:3 - 0.2,
+        subset = supp == "VC", col = "yellow",
+        main = "Guinea Pigs' Tooth Growth",
+        xlab = "Vitamin C dose mg",
+        ylab = "tooth length",
+        xlim = c(0.5, 3.5), ylim = c(0, 35), yaxs = "i")
+boxplot(len ~ dose, data = ToothGrowth, add = TRUE,
+        boxwex = 0.25, at = 1:3 + 0.2,
+        subset = supp == "OJ", col = "orange")
+legend(2, 9, c("Ascorbic acid", "Orange juice"),
+       fill = c("yellow", "orange"))
+```
+
+The graph indicates a positive correlation between dose levels and tooth growth for both delivery methods although the correlation for ascorbic acid is greater than that for orange juice.
+
+### Summary information for Ascorbic acid
+
+``` {r}
+summary(ToothGrowth[ToothGrowth$supp == "VC", "len"])
+```
+
+### Summary information for Orange juice
+
+``` {r}
+summary(ToothGrowth[ToothGrowth$supp == "OJ", "len"])
+```
+
+OJ has a greater mean than VC as shown hereunder.
+
+``` {r}
+round(sapply(with(ToothGrowth, split(len, supp), mean), mean), 2)
+```
+
+The group mean increases as the dosage increases.
+``` {r}
+round(with(ToothGrowth, aggregate(len, list(dose), mean)), 2)
+```
+
+From the table below it is clear that 
+``` {r, fig.height = 4}
+data <- with(ToothGrowth, aggregate(len, list(dose, supp), mean))
+dataOJ <- data[data$Group.2 == "OJ",]
+dataVC <- data[data$Group.2 == "VC",]
+with (dataOJ, plot (Group.1, x, type="l", col="orange", lwd=2, pch=23, 
+                    xlab="Dose", ylan="mean", ylim=c(5, 30)))
+with (dataVC, lines (Group.1, x, type="l", col="yellow", lwd=2, pch=22))
+legend (1.6, 10, c("OJ", "VC"), lty=c(1,1), lwd=2, col=c("orange", "yellow"))
+```
+
+### T-Tests on the data: Supliment Type
+
+Looking at the data as a whole, 
+```{r}
+t.test(len ~ supp, data=ToothGrowth)
+```
+
+From the above data, one cannot state at the 95% confidence interval that one supplement is more effective than the other. This is because the confidence interval comprises 0 within it and so the null hypothesis cannot be rejected.
+
+### T-Tests on the data: Suppliment by Dosage
+
+The purpose of these tests is to see whether the two supplements are more effective at the different doses.
+
+```{r}
+suppByDose <- list(d0.5 = subset(ToothGrowth, dose == 0.5),
+                   d1.0 = subset(ToothGrowth, dose == 1.0),
+                   d2.0 = subset(ToothGrowth, dose == 2.0))
+
+lapply(suppByDose, function(d) t.test(len ~ supp, data = d))
+```
+
+From the output of the t-test the dose levels of 0.5 and 1.0 we can at a confidence interval of 95% accept the Alternative hypothesis $H~a$ that the effect of OJ is more effective than VC. The same statement cannot be made for the dose of 2.0.
+
+### T-Tests on the data: Dosage levels
+
+The purpose of these tests is to compare the dosage levels irrespective of supplement.
+
+```{r}
+doseLevels <- list(d0.5_v_1.0 = subset(ToothGrowth, dose %in% c(0.5, 1.0)),
+                   d0.5_v_2.0 = subset(ToothGrowth, dose %in% c(0.5, 2.0)),
+                   d1.0_v_2.0 = subset(ToothGrowth, dose %in% c(1.0, 2.0)))
+
+lapply(doseLevels, function(d) t.test(len ~ dose, data = d))
+```
+
+At the 95% confidence interval the very small p-value and the very high absolute value of t indicate that for all three comparisons, the alternative hypothesis that the "*true difference in means is not equal to 0*" seems to prevail.
+
+## Code Reproducability
+
+This project follows the reproducible research methodology that allows others to view the code and execute it if they so desire. The code for this project can be downloaded from https://github.com/chribonn/statinference-005.
