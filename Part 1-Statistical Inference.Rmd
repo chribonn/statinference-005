@@ -41,7 +41,7 @@ The standard deviation of the distribution from the generated data is `r round(s
 
 The variance of the distribution from the generated data is `r round(var(meanDist), 3)`. This compares to the expected variance of `r round((1/(lambda * sqrt(testCount)))^2, 3)`.
 
-```{r}
+```{r, fig.height=4}
 # plot the histogram of the means
 hist(means, breaks=50, prob=TRUE,
      main="Distribution of means of 1000 samples having a lambda of 0.2",
@@ -69,7 +69,7 @@ ul <- mean(means) + CI * (sd(means)/sqrt(testCount))
 
 The 95% confidence interval, spans from ```r round(ll, 3)``` and  ```r round(ul, 3)```. 
 
-```{r}
+```{r, fig.height=4}
 # plot the histogram of the means
 hist(means, breaks=50, prob=TRUE,
      main="Distribution of means of 1000 samples having a lambda of 0.2",
